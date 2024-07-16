@@ -1,13 +1,9 @@
 package edu.kafkapractice.plugin.file.sendbutton;
 
 import com.intellij.openapi.actionSystem.AnAction;
-import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.markup.GutterIconRenderer;
-import com.intellij.openapi.fileEditor.FileDocumentManager;
-import com.intellij.openapi.vfs.VirtualFile;
 import edu.kafkapractice.plugin.KafkaIcons;
-import edu.kafkapractice.plugin.KafkaMessageDialog;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

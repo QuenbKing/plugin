@@ -30,6 +30,8 @@
                   language="Kafka">
         </fileType>
         <postStartupActivity implementation="edu.kafkapractice.plugin.KafkaProjectActivity"/>
+        <editorNotificationProvider implementation="edu.kafkapractice.plugin.file.connectpanel.KafkaEditorNotificationProvider"/>
+        <notificationGroup id="Kafka Notifications" displayType="BALLOON" />
     </extensions>
 
     <actions>

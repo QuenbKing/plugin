@@ -17,12 +17,15 @@ intellij {
     version.set("2023.1.5")
     type.set("IC") // Target IDE Platform
 
-    plugins.set(listOf(/* Plugin Dependencies */))
+    plugins.set(listOf())
 }
 
 dependencies {
-    implementation("org.apache.kafka:kafka-clients:3.4.0")
+    implementation("org.apache.kafka:kafka-clients:3.7.0")
+    implementation("org.slf4j:slf4j-api:1.7.36")
+    implementation("org.slf4j:slf4j-simple:1.7.36")
 }
+
 
 tasks {
     // Set the JVM compatibility versions

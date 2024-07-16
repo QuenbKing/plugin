@@ -12,7 +12,6 @@ import java.util.Map;
 import java.util.Objects;
 
 public class KafkaFileParser {
-
     private static final Map<Editor, SendButtonDocumentListener> editorListeners = new HashMap<>();
 
     public static void parseKafkaFile(VirtualFile file, Project project) {
@@ -24,12 +23,10 @@ public class KafkaFileParser {
         Editor editor = editors[0];
 
         if (!editorListeners.containsKey(editor)) {
-            String content = editor.getDocument().getText();
-            String[] lines = content.split("\\r?\\n");
             SendButtonDocumentListener listener = new SendButtonDocumentListener(editor);
             editor.getDocument().addDocumentListener(listener);
             editorListeners.put(editor, listener);
-            listener.addSendButtons(lines);
+            listener.addSendButtons();
         }
     }
 }

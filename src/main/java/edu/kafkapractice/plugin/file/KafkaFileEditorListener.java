@@ -6,6 +6,7 @@ import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.MessageBusConnection;
+import edu.kafkapractice.plugin.file.client.KafkaClientManager;
 import org.jetbrains.annotations.NotNull;
 
 public class KafkaFileEditorListener implements FileEditorManagerListener {
@@ -18,6 +19,7 @@ public class KafkaFileEditorListener implements FileEditorManagerListener {
         if (newFile != null && newFile.getName().endsWith(".kafka")) {
             KafkaFileParser.parseKafkaFile(newFile, project);
         }
+        KafkaClientManager.closeConnection();
     }
 
     @Override
