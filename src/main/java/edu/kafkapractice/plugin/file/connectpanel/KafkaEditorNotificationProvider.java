@@ -2,7 +2,6 @@ package edu.kafkapractice.plugin.file.connectpanel;
 
 import com.intellij.openapi.fileEditor.FileEditor;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.EditorNotificationProvider;
 import com.intellij.ui.components.JBTextField;
@@ -12,10 +11,12 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.concurrent.TimeoutException;
+import java.util.ArrayList;
 import java.util.function.Function;
 
 public class KafkaEditorNotificationProvider implements EditorNotificationProvider {
+
+    private static final ArrayList<JButton> connectButtons = new ArrayList<>();
 
     @Override
     @Nullable
@@ -40,13 +41,12 @@ public class KafkaEditorNotificationProvider implements EditorNotificationProvid
                 gbc.gridx = 2;
                 JButton connectButton = new JButton("Connect");
                 connectButton.addActionListener(e -> {
-                    try {
-                        KafkaClientManager.connectToKafka(bootstrapServersField.getText());
-                    } catch (TimeoutException ex) {
-                        Messages.showErrorDialog("Failed to connect to Kafka: " + ex.getMessage(), "Error");
-                    }
+                    KafkaClientManager.connectToKafka(bootstrapServersField.getText(),
+                            KafkaEditorNotificationProvider::disableAllConnectButtons,
+                            KafkaEditorNotificationProvider::enableAllConnectButtons);
                 });
                 panel.add(connectButton, gbc);
+                registerConnectButton(connectButton);
 
                 gbc.gridx = 3;
                 JButton closeButton = new JButton("Close Connection");
@@ -59,5 +59,22 @@ public class KafkaEditorNotificationProvider implements EditorNotificationProvid
             };
         }
         return null;
+    }
+
+    private void registerConnectButton(JButton button) {
+        connectButtons.add(button);
+        button.setEnabled(!KafkaClientManager.isConnecting());
+    }
+
+    public static void disableAllConnectButtons() {
+        for (JButton button : connectButtons) {
+            button.setEnabled(false);
+        }
+    }
+
+    public static void enableAllConnectButtons() {
+        for (JButton button : connectButtons) {
+            button.setEnabled(true);
+        }
     }
 }
