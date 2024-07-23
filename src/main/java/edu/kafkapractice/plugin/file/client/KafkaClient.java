@@ -10,18 +10,42 @@ import org.apache.kafka.common.serialization.StringSerializer;
 
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.TimeoutException;
 
 public class KafkaClient {
 
     private KafkaProducer<String, String> producer;
+    private final String bootstrapServers;
 
     public KafkaClient(String bootstrapServers) throws TimeoutException {
+        this.bootstrapServers = bootstrapServers;
         try {
             connect(bootstrapServers);
         } catch (KafkaException e) {
             throw new TimeoutException(e.getMessage());
         }
+    }
+
+    public void sendMessage(String topic, String key, String message, Map<String, String> headers) {
+        ProducerRecord<String, String> record = new ProducerRecord<>(topic, key, message);
+        headers.forEach((headerKey, headerValue) -> record.headers().add(headerKey, headerValue.getBytes()));
+        producer.send(record);
+    }
+
+    public boolean doesTopicExist(String topic) {
+        Properties adminProps = new Properties();
+        adminProps.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        try (AdminClient adminClient = AdminClient.create(adminProps)) {
+            Set<String> topics = adminClient.listTopics().names().get();
+            return topics.contains(topic);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public void close() {
+        producer.close();
     }
 
     private void connect(String bootstrapServers) {
@@ -38,15 +62,5 @@ public class KafkaClient {
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         producer = new KafkaProducer<>(props);
-    }
-
-    public void sendMessage(String topic, String key, String message, Map<String, String> headers) {
-        ProducerRecord<String, String> record = new ProducerRecord<>(topic, key, message);
-        headers.forEach((headerKey, headerValue) -> record.headers().add(headerKey, headerValue.getBytes()));
-        producer.send(record);
-    }
-
-    public void close() {
-        producer.close();
     }
 }

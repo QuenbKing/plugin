@@ -6,13 +6,16 @@ import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.vfs.VirtualFile;
 import edu.kafkapractice.plugin.file.client.KafkaClientManager;
+import edu.kafkapractice.plugin.file.connectpanel.KafkaEditorNotificationProvider;
 import org.jetbrains.annotations.NotNull;
 
 public class KafkaFileEditorListener implements FileEditorManagerListener {
     private final KafkaFileParser kafkaFileParser;
+    private final KafkaEditorNotificationProvider kafkaEditorNotificationProvider;
 
-    public KafkaFileEditorListener(KafkaFileParser kafkaFileParser) {
+    public KafkaFileEditorListener(KafkaFileParser kafkaFileParser, KafkaEditorNotificationProvider kafkaEditorNotificationProvider) {
         this.kafkaFileParser = kafkaFileParser;
+        this.kafkaEditorNotificationProvider = kafkaEditorNotificationProvider;
     }
 
     @Override
@@ -30,6 +33,9 @@ public class KafkaFileEditorListener implements FileEditorManagerListener {
     public void fileClosed(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
         if (file.getName().endsWith(".kafka")) {
             kafkaFileParser.removeEditorListener(file);
+            if (kafkaEditorNotificationProvider != null) {
+                kafkaEditorNotificationProvider.removeConnectButton(file);
+            }
         }
     }
 }
