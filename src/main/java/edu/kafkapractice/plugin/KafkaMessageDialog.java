@@ -1,27 +1,22 @@
 package edu.kafkapractice.plugin;
 
-import com.intellij.notification.NotificationType;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.ui.DialogWrapper;
-import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.components.JBTextField;
 import com.intellij.util.ui.JBUI;
-import edu.kafkapractice.plugin.file.client.KafkaClient;
 import edu.kafkapractice.plugin.file.client.KafkaClientManager;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 public class KafkaMessageDialog extends DialogWrapper {
 
     private final Editor editor;
+    private final KafkaClientManager kafkaClientManager;
     private final int lineNumber;
     private JBTextField topicField;
     private JBTextField keyField;
@@ -29,49 +24,25 @@ public class KafkaMessageDialog extends DialogWrapper {
     private JTextArea headersArea;
     private JCheckBox createTopicCheckBox;
 
-    public KafkaMessageDialog(Editor editor, int lineNumber) {
+    public KafkaMessageDialog(Editor editor, int lineNumber, KafkaClientManager kafkaClientManager) {
         super(true);
         this.editor = editor;
         this.lineNumber = lineNumber;
+        this.kafkaClientManager = kafkaClientManager;
         setTitle("Send Message to Kafka");
         init();
         setResizable(true);
-        setSizeRelativeToScreen(0.4, 0.4);
     }
 
     @Override
     protected void doOKAction() {
-        KafkaClient kafkaClient = KafkaClientManager.getInstance();
-
-        if (kafkaClient == null) {
-            Messages.showErrorDialog("KafkaProducer is not initialized", "Error");
-            return;
-        }
-
         String topic = topicField.getText();
-
-        if (createTopicCheckBox.isSelected() || kafkaClient.doesTopicExist(topic)) {
-            String key = keyField.getText();
-            String message = messageArea.getText();
-            String[] headersLines = headersArea.getText().split("\\r?\\n");
-
-            Map<String, String> headers = Arrays.stream(headersLines)
-                    .map(headerLine -> headerLine.split(":"))
-                    .filter(headerParts -> headerParts.length == 2)
-                    .collect(Collectors.toMap(
-                            headerParts -> headerParts[0].trim(),
-                            headerParts -> headerParts[1].trim()
-                    ));
-            kafkaClient.sendMessage(topic, key, message, headers);
-            super.doOKAction();
-            SwingUtilities.invokeLater(() -> {
-                KafkaNotification.showNotification(String.format("Published: %s", key), NotificationType.INFORMATION);
-            });
-        } else {
-            Messages.showErrorDialog("Topic does not exist", "Error");
-        }
+        String key = keyField.getText();
+        String message = messageArea.getText();
+        String headersText = headersArea.getText();
+        boolean createTopic = createTopicCheckBox.isSelected();
+        kafkaClientManager.sendMessage(topic, key, message, headersText, createTopic, super::doOKAction);
     }
-
 
     @Nullable
     @Override
@@ -89,9 +60,17 @@ public class KafkaMessageDialog extends DialogWrapper {
 
     private void initFields() {
         topicField = new JBTextField();
+        topicField.setPreferredSize(new Dimension(300, 30));
+
         keyField = new JBTextField();
-        messageArea = new JTextArea(5, 20);
-        headersArea = new JTextArea(5, 20);
+        keyField.setPreferredSize(new Dimension(300, 30));
+
+        messageArea = new JTextArea(5, 90);
+        messageArea.setLineWrap(true);
+
+        headersArea = new JTextArea(5, 90);
+        headersArea.setLineWrap(true);
+
         createTopicCheckBox = new JCheckBox("Create Topic");
     }
 
@@ -99,6 +78,7 @@ public class KafkaMessageDialog extends DialogWrapper {
         gbc.insets = JBUI.insets(5);
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
 
         gbc.gridx = 0;
         gbc.gridy = 0;
@@ -132,13 +112,6 @@ public class KafkaMessageDialog extends DialogWrapper {
         panel.add(new JLabel(labelText), BorderLayout.NORTH);
         panel.add(new JBScrollPane(area), BorderLayout.CENTER);
         return panel;
-    }
-
-    private void setSizeRelativeToScreen(double widthFactor, double heightFactor) {
-        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        int width = (int) (screenSize.width * widthFactor);
-        int height = (int) (screenSize.height * heightFactor);
-        setSize(width, height);
     }
 
     private void loadMessageDialogData() {

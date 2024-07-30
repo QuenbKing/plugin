@@ -13,28 +13,42 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 public class KafkaEditorNotificationProvider implements EditorNotificationProvider {
 
-    private static KafkaEditorNotificationProvider instance;
+    private static final Map<Project, KafkaEditorNotificationProvider> instances = new ConcurrentHashMap<>();
 
     private final Map<VirtualFile, JButton> connectButtons = new HashMap<>();
 
-    public KafkaEditorNotificationProvider() {
-        instance = this;
+    public KafkaEditorNotificationProvider(Project project) {
+        instances.put(project, this);
     }
 
     @Override
     @Nullable
     public Function<? super FileEditor, ? extends JComponent> collectNotificationData(@NotNull Project project, @NotNull VirtualFile file) {
         if (file.getName().endsWith(".kafka")) {
-            return editor -> createKafkaPanel(file);
+            KafkaClientManager kafkaClientManager = KafkaClientManager.getInstance(project);
+            return editor -> createKafkaPanel(kafkaClientManager, file);
         }
         return null;
     }
 
-    private JPanel createKafkaPanel(VirtualFile file) {
+    public void removeConnectButton(VirtualFile file) {
+        connectButtons.remove(file);
+    }
+
+    public static KafkaEditorNotificationProvider getInstance(Project project) {
+        return instances.get(project);
+    }
+
+    public static void removeInstance(Project project) {
+        instances.remove(project);
+    }
+
+    private JPanel createKafkaPanel(KafkaClientManager kafkaClientManager, VirtualFile file) {
         JPanel panel = new JPanel();
 
         GridBagLayout layout = new GridBagLayout();
@@ -53,29 +67,21 @@ public class KafkaEditorNotificationProvider implements EditorNotificationProvid
         gbc.gridx = 2;
         JButton connectButton = new JButton("Connect");
         connectButton.addActionListener(e -> {
-            KafkaClientManager.connectToKafka(bootstrapServersField.getText(),
+            kafkaClientManager.connectToKafka(bootstrapServersField.getText(),
                     this::disableAllConnectButtons,
                     this::enableAllConnectButtons);
         });
         panel.add(connectButton, gbc);
-        registerConnectButton(connectButton, file);
+        registerConnectButton(connectButton, file, kafkaClientManager);
 
         gbc.gridx = 3;
         JButton closeButton = new JButton("Close Connection");
         closeButton.addActionListener(e -> {
-            KafkaClientManager.closeConnection();
+            kafkaClientManager.closeConnection();
         });
         panel.add(closeButton, gbc);
 
         return panel;
-    }
-
-    public static KafkaEditorNotificationProvider getInstance() {
-        return instance;
-    }
-
-    public void removeConnectButton(VirtualFile file) {
-        connectButtons.remove(file);
     }
 
     private void disableAllConnectButtons() {
@@ -90,8 +96,8 @@ public class KafkaEditorNotificationProvider implements EditorNotificationProvid
         }
     }
 
-    private void registerConnectButton(JButton button, VirtualFile file) {
+    private void registerConnectButton(JButton button, VirtualFile file, KafkaClientManager kafkaClientManager) {
         connectButtons.put(file, button);
-        button.setEnabled(!KafkaClientManager.isConnecting());
+        button.setEnabled(!kafkaClientManager.isConnecting());
     }
 }

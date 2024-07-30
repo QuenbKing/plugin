@@ -4,8 +4,10 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import edu.kafkapractice.plugin.KafkaMessageDialog;
+import edu.kafkapractice.plugin.file.client.KafkaClientManager;
 import org.jetbrains.annotations.NotNull;
 
 public class KafkaSendAction extends AnAction {
@@ -20,8 +22,10 @@ public class KafkaSendAction extends AnAction {
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
         VirtualFile file = FileDocumentManager.getInstance().getFile(editor.getDocument());
-        if (file != null) {
-            KafkaMessageDialog dialog = new KafkaMessageDialog(editor, lineNumber);
+        Project project = e.getProject();
+        if (project != null && file != null) {
+            KafkaClientManager kafkaClientManager = KafkaClientManager.getInstance(project);
+            KafkaMessageDialog dialog = new KafkaMessageDialog(editor, lineNumber, kafkaClientManager);
             dialog.show();
         }
     }
