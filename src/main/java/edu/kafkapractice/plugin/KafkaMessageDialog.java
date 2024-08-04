@@ -4,6 +4,7 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.util.TextRange;
+import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.components.JBTextField;
 import com.intellij.util.ui.JBUI;
@@ -23,6 +24,7 @@ public class KafkaMessageDialog extends DialogWrapper {
     private JTextArea messageArea;
     private JTextArea headersArea;
     private JCheckBox createTopicCheckBox;
+    private JLabel kafkaConnectionLabel;
 
     public KafkaMessageDialog(Editor editor, int lineNumber, KafkaClientManager kafkaClientManager) {
         super(true);
@@ -32,6 +34,7 @@ public class KafkaMessageDialog extends DialogWrapper {
         setTitle("Send Message to Kafka");
         init();
         setResizable(true);
+        updateOkButtonState();
     }
 
     @Override
@@ -41,7 +44,7 @@ public class KafkaMessageDialog extends DialogWrapper {
         String message = messageArea.getText();
         String headersText = headersArea.getText();
         boolean createTopic = createTopicCheckBox.isSelected();
-        kafkaClientManager.sendMessage(topic, key, message, headersText, createTopic, super::doOKAction);
+        kafkaClientManager.sendMessage(topic, key, message, headersText, createTopic, this::closeDialog);
     }
 
     @Nullable
@@ -58,7 +61,21 @@ public class KafkaMessageDialog extends DialogWrapper {
         return panel;
     }
 
+    @Override
+    protected void dispose() {
+        super.dispose();
+        kafkaClientManager.clearCurrentDialog();
+    }
+
+    private void closeDialog() {
+        close(DialogWrapper.OK_EXIT_CODE);
+    }
+
     private void initFields() {
+        kafkaConnectionLabel = new JLabel(kafkaClientManager.getKafkaConnectionInfo());
+        kafkaConnectionLabel.setFont(new Font("Arial", Font.BOLD, 12));
+        kafkaConnectionLabel.setForeground(JBColor.BLUE);
+
         topicField = new JBTextField();
         topicField.setPreferredSize(new Dimension(300, 30));
 
@@ -82,21 +99,24 @@ public class KafkaMessageDialog extends DialogWrapper {
 
         gbc.gridx = 0;
         gbc.gridy = 0;
+        panel.add(kafkaConnectionLabel, gbc);
+
+        gbc.gridy = 1;
         panel.add(createLabeledField("Topic:", topicField), gbc);
 
         gbc.gridx = 1;
         panel.add(createLabeledField("Key:", keyField), gbc);
 
-        gbc.gridy = 1;
+        gbc.gridy = 2;
         gbc.gridx = 0;
         gbc.gridwidth = 2;
         gbc.fill = GridBagConstraints.BOTH;
         panel.add(createLabeledArea("Message:", messageArea), gbc);
 
-        gbc.gridy = 2;
+        gbc.gridy = 3;
         panel.add(createLabeledArea("Headers:", headersArea), gbc);
 
-        gbc.gridy = 3;
+        gbc.gridy = 4;
         panel.add(createTopicCheckBox, gbc);
     }
 
@@ -112,6 +132,11 @@ public class KafkaMessageDialog extends DialogWrapper {
         panel.add(new JLabel(labelText), BorderLayout.NORTH);
         panel.add(new JBScrollPane(area), BorderLayout.CENTER);
         return panel;
+    }
+
+    private void updateOkButtonState() {
+        setOKActionEnabled(!kafkaClientManager.isSendingMessage());
+        kafkaClientManager.setCurrentDialog(this);
     }
 
     private void loadMessageDialogData() {

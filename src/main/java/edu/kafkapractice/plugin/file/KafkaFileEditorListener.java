@@ -4,9 +4,7 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import edu.kafkapractice.plugin.file.client.KafkaClientManager;
 import edu.kafkapractice.plugin.file.connectpanel.KafkaEditorNotificationProvider;
 import org.jetbrains.annotations.NotNull;
 
@@ -20,12 +18,10 @@ public class KafkaFileEditorListener implements FileEditorManagerListener {
     @Override
     public void selectionChanged(@NotNull FileEditorManagerEvent event) {
         Editor editor = event.getManager().getSelectedTextEditor();
-        Project project = event.getManager().getProject();
         VirtualFile newFile = event.getNewFile();
 
         if (editor != null && newFile != null && newFile.getName().endsWith(".kafka")) {
             kafkaFileParser.parseKafkaFile(editor);
-            KafkaClientManager.getInstance(project).closeConnection();
         }
     }
 

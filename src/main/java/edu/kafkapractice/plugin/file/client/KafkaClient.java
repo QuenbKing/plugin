@@ -5,6 +5,7 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
@@ -29,9 +30,9 @@ public class KafkaClient {
         producer.send(record).get();
     }
 
-    public void close() {
+    public void close(Duration duration) {
         if (producer != null) {
-            producer.close();
+            producer.close(duration);
         }
     }
 

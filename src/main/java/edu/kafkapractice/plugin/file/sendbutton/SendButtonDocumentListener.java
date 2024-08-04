@@ -17,10 +17,8 @@ import java.util.Map;
 public class SendButtonDocumentListener implements DocumentListener {
 
     private static final String SEND_MESSAGE_MARKER = "###Send Message";
-
-    private final Editor editor;
     private final Map<Integer, RangeHighlighter> sendButtonHighlighters = new HashMap<>();
-
+    private final Editor editor;
     private int previousDocumentLinesCount;
 
     public SendButtonDocumentListener(Editor editor) {
